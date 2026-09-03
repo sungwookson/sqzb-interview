@@ -1,26 +1,32 @@
-% ============================ Q4 ============================
-\begin{frame}{Q4 — 포팅 계획이 틀어진 사례와 교훈}
-  \footnotesize
+\begin{frame}{Q4 — 포팅 계획이 틀어진 사례}
   \hd{Wrong assumption}
-  Ported Qwen2.5/3-VL to Gaudi. LLM already ran; ``the vision encoder is just a transformer''
-  $\Rightarrow$ scoped it as wrap-the-whole-encoder-in-one-graph.
+  Ported Qwen2.5/3-VL to Gaudi. ``The vision encoder is just a transformer''
+  $\Rightarrow$ wrap the whole encoder in one graph.
 
   \hd{What broke}
-  Vision-tower sequence length $=$ total patch count $= \sum_{\text{images}} t\cdot h\cdot w$
-  — varies with image count, resolution, aspect ratio $\Rightarrow$ \texttt{cu\_seqlens},
-  block-diagonal mask shape, window partitioning all data-dependent $\Rightarrow$ one static
-  graph impossible. Team pushed on a pure graph for weeks.
+  Vision-tower seq length $=$ total patch count $=\sum t\cdot h\cdot w$ — varies with image
+  count, resolution, aspect ratio $\Rightarrow$ \texttt{cu\_seqlens}, mask shape, window
+  partitioning all data-dependent $\Rightarrow$ one static graph impossible.
 
   \hd{Resolved in phases}
   \begin{itemize}
-    \item per-image loop $\to$ patch-count bucketing (pad hidden states / RoPE / \texttt{cu\_seqlens}, strip after)
-    \item split the tower: \textbf{pre\_attn (dynamic) / static core (compiled) / post\_attn (dynamic)}
-    \item operator-declared warm-up (resolution $\times$ item-count, incl. ranges for the cache interaction)
+    \item per-image loop $\to$ patch-count bucketing (pad / strip)
+    \item split the tower: \textbf{pre\_attn (dyn) / static core (compiled) / post\_attn (dyn)}
+    \item operator-declared warm-up (resolution $\times$ item-count)
   \end{itemize}
-  Never fully static — mask still CPU-fallbacks for long sequences; long-seq attention still tiles.
+  Never fully static — mask CPU-fallbacks for long sequences.
+\end{frame}
 
-  \hd{Lesson $\to$ sglang-rbln}
-  Don't eliminate dynamism, \emph{relocate} it: largest possible static core, thin dynamic shell on the host.
-  $\Rightarrow$ encoder+projector as a separate compiled unit; pre/static/post as the default structure;
-  bucket by patch count; warm-up manifest; miss-guard with a bounded loud fallback.
+\begin{frame}{Q4 — the lesson}
+  \begin{alertblock}{}
+    Don't eliminate dynamism — \emph{relocate} it: largest possible static core,
+    thin dynamic shell on the host.
+  \end{alertblock}
+  \hd{Reflected in sglang-rbln}
+  \begin{itemize}\setlength\itemsep{4pt}
+    \item Encoder $+$ projector as a separate compiled unit.
+    \item pre / static / post split as the default structure for any data-dependent submodel.
+    \item Bucket by patch count; operator-declared warm-up manifest.
+    \item Miss-guard with a bounded, loud fallback — never a silent recompile on the request path.
+  \end{itemize}
 \end{frame}

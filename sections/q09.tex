@@ -1,26 +1,18 @@
-% ============================ Q9 ============================
-\begin{frame}{Q9 — Strict AOT에서 speculative decoding (EAGLE)}
-  \footnotesize
-  \hd{Setup}
-  A small draft head predicts the next $k$ tokens autoregressively from the target's hidden states;
-  the target verifies them in one forward; the accepted prefix is committed.
-
+\begin{frame}{Q9 — AOT에서 speculative decoding (EAGLE)}
+  \hd{Setup} A small draft head predicts $k$ tokens AR from the target's hidden states;
+  the target verifies in one forward; the accepted prefix is committed.
   \hd{AOT problems}
   \begin{itemize}
     \item Variable accept length $0..k$ $\Rightarrow$ always run the fixed verify graph, select on host;
-          write KV for all $k$, then advance \texttt{seq\_len} by the accepted count.
-    \item Tree mask $\Rightarrow$ a compiled attention variant, fixed max size/depth; adaptive trees quantized.
-    \item Draft AR loop $=$ $k$ tiny sequential device calls $\Rightarrow$ unroll into one graph, or eat the overhead.
-    \item Hidden-state feedback plumbing; separate draft KV; batching desync; $[k,\text{vocab}]$ D2H $+$ host rejection sampling.
+          write KV for all $k$, advance \texttt{seq\_len} by accepted count.
+    \item Tree mask $\Rightarrow$ a compiled attention variant, fixed max size/depth.
+    \item Draft AR loop $=$ $k$ tiny sequential calls $\Rightarrow$ unroll into one graph.
+    \item Hidden-state feedback plumbing; separate draft KV; $[k,\text{vocab}]$ D2H $+$ host rejection sampling.
   \end{itemize}
-
   \hd{What vllm-rbln shipped}
-  EAGLE/EAGLE3 self-draft $+$ Medusa \emph{only}; no separate draft model / parallel drafting
-  (\texttt{NotImplementedError}); \textbf{chain, not tree}; $k{-}1$ steps $=$ a Python loop of separate
-  compiled calls; verify-all-$k$ $+$ padding $+$ host select.
-
+  EAGLE/EAGLE3 self-draft $+$ Medusa \emph{only}; no parallel drafting; \textbf{chain, not tree};
+  $k{-}1$ steps $=$ a Python loop of separate compiled calls.
   \begin{alertblock}{Universal AOT pattern}
     Always compute the maximum, select on the host.
   \end{alertblock}
-  \emph{[insert your own static-graph decoding experience, or say ``haven't shipped spec decode on a fixed-shape stack; the Gaudi VLM pattern applies''.]}
 \end{frame}

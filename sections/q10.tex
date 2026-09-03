@@ -1,30 +1,29 @@
-% ============================ Q10 ============================
-\begin{frame}{Q10 — TTFT OK, TPOT P99 나쁨: 원인 분석}
-  \footnotesize
+\begin{frame}{Q10 — TTFT OK, TPOT P99 나쁨}
   \hd{Read the symptom}
-  TTFT OK $\Rightarrow$ prefill / weights / TP / plumbing fine. TPOT-\emph{P99} bad (not the mean)
-  $\Rightarrow$ intermittent decode-loop stalls, not steady slowness.
-
+  TTFT OK $\Rightarrow$ prefill / TP / plumbing fine. TPOT-\emph{P99} bad (not the mean)
+  $\Rightarrow$ intermittent decode-loop stalls.
   \hd{Diagnosis, in order}
-  \begin{enumerate}\itemsep1pt
+  \begin{enumerate}\setlength\itemsep{1pt}
     \item Span-instrument one decode step; per-step histograms.
     \item Queueing vs service (low load vs target QPS).
-    \item Prefill interference (spikes vs new-request arrivals).
-    \item Bucket / batch dynamics (graph-switch cost, boundary cliffs).
+    \item Prefill interference; bucket / graph-switch cost.
     \item Device-exec variance at a \emph{fixed} bucket ($\Rightarrow$ compiler / runtime).
-    \item Host critical path — GC, detok, block-table rebuild, non-overlapped copies ($\Rightarrow$ serving).
-    \item Copy \& sync; collectives; eviction / prefix-hit KV copies; external (CPU, NUMA, thermal).
+    \item Host critical path — GC, detok, non-overlapped copies ($\Rightarrow$ serving).
+    \item Copy \& sync; collectives; eviction / prefix-hit KV copies.
   \end{enumerate}
+\end{frame}
 
+\begin{frame}{Q10 — attribution \& method}
   \hd{Team attribution}
   \begin{itemize}
     \item \textbf{serving} — queue / batching / bucket policy / overlap / host structures.
-    \item \textbf{compiler} — per-op time at fixed shape, kernel schedule, in-graph comm, graph-switch. (Signal: device P99 $\gg$ P50, same bucket.)
-    \item \textbf{runtime} — D2H mechanism, graph load/switch, collective lib, \texttt{\_copy\_kv\_cache}.
+    \item \textbf{compiler} — per-op time at fixed shape, kernel schedule, graph-switch
+          (signal: device P99 $\gg$ P50, same bucket).
+    \item \textbf{runtime} — D2H mechanism, graph load/switch, collectives, \texttt{\_copy\_kv\_cache}.
   \end{itemize}
-
   \hd{Method}
   Load-sweep fixed lengths $\to$ realistic mix $\to$ stack P50/P95/P99 components $\to$
   the one whose P99/P50 ratio explodes is the culprit $\to$ bisect by feature toggles.
-  \emph{[insert your own latency triage: the breakdown, the culprit, the fix, which team.]}
+  \vspace{2pt}
+  \footnotesize\emph{[insert your own latency triage: the breakdown, the culprit, the fix, which team.]}
 \end{frame}

@@ -1,26 +1,16 @@
-% ============================ Q7 ============================
-\begin{frame}{Q7 — SGLang vs vLLM 스케줄러 · host 병목}
-  \footnotesize
+\begin{frame}{Q7 — 스케줄러 차이 · host 병목}
   \hd{How SGLang differs}
   \begin{itemize}
-    \item \textbf{Overlap scheduler} — build the next batch on CPU while the current runs on device. The defining feature.
-    \item Radix / cache-aware admission (longest-prefix-match first); FSM $+$ jump-forward integrated into scheduling.
-    \item vLLM v1: separate EngineCore process, chunked prefill by default, token-budget scheduling.
+    \item \textbf{Overlap scheduler} — build the next batch on CPU while the current runs on device.
+    \item Radix / cache-aware admission; FSM $+$ jump-forward in the scheduler.
+    \item vLLM v1: separate EngineCore, chunked prefill by default.
   \end{itemize}
-
   \hd{Importance for RBLN — the top TPOT lever}
   \begin{itemize}
-    \item Decode device step is short and fixed $\Rightarrow$ host fraction (batch build, match, block-table,
-          H2D, per-step mask, sampling, detok) dominates.
-    \item host $\ge$ device $\Rightarrow$ host-bound $\Rightarrow$ TPOT set by the scheduler loop, not the chip.
-    \item AOT removes the graph-capture escape hatch $\Rightarrow$ overlap is close to mandatory.
-    \item vllm-rbln evidence: pinned \texttt{\_to\_list}, per-step host masks, Python-loop KV copies, async scheduling disabled.
-    \item Porting SGLang's overlap scheduler $=$ \textbf{greenfield} (nothing to replace).
-    \item Caveat: TTFT / long prefill is device-bound — this is a decode / TPOT lever.
+    \item Decode device step is short and fixed $\Rightarrow$ host fraction dominates.
+    \item host $\ge$ device $\Rightarrow$ TPOT set by the scheduler loop, not the chip.
+    \item vllm-rbln is host-heavy today (pinned \texttt{\_to\_list}, per-step masks, Python-loop KV copies, async off).
+    \item Porting the overlap scheduler $=$ \textbf{greenfield}. Caveat: TTFT is device-bound.
   \end{itemize}
-
-  \begin{block}{Judgment basis}
-    Measure device-exec vs wall step time at target batch. host critical path $>$ device exec $\Rightarrow$ scheduler is the top lever.
-    \emph{[insert your own host-bottleneck example: measurement, \% host, what you changed.]}
-  \end{block}
+  \footnotesize\emph{[insert a host-bottleneck measurement: \% host on the decode step, what you changed.]}
 \end{frame}

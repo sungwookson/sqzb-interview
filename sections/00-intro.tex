@@ -1,40 +1,36 @@
-% ============================ INTRO ============================
-
 \begin{frame}{발표 순서}
   \small
   \begin{columns}[T]
     \begin{column}{0.5\textwidth}
-      \begin{itemize}
-        \item[Q1] Strict AOT — 재사용 노하우 vs 재설계
+      \begin{itemize}\setlength\itemsep{4pt}
+        \item[Q1] Strict AOT — 재사용 vs 재설계
         \item[Q2] 고정 shape 버킷 / warm-up의 한계
         \item[Q3] Prefix caching과 prefill 버킷 설계
-        \item[Q4] 포팅 계획이 틀어진 사례와 교훈
+        \item[Q4] 포팅 계획이 틀어진 사례
         \item[Q5] 컴파일 스펙트럼별 강제사항
       \end{itemize}
     \end{column}
     \begin{column}{0.5\textwidth}
-      \begin{itemize}
+      \begin{itemize}\setlength\itemsep{4pt}
         \item[Q6] RadixAttention vs PagedAttention
-        \item[Q7] SGLang vs vLLM 스케줄러 · host 병목
+        \item[Q7] 스케줄러 차이 · host 병목
         \item[Q8] RadixAttention의 RBLN 포팅 경계
-        \item[Q9] Strict AOT에서 speculative decoding
-        \item[Q10] TTFT OK · TPOT P99 악화 분석
+        \item[Q9] AOT에서 speculative decoding
+        \item[Q10] TPOT P99 악화 분석
       \end{itemize}
     \end{column}
   \end{columns}
 \end{frame}
 
 \begin{frame}{전제 — vllm-rbln에서 읽어낸 RBLN 스택}
-  \small
-  \begin{itemize}
-    \item \textbf{완전 AOT.} 런타임 컴파일 / eager fallback 없음 — 미준비 shape은 실행 불가(경고만).
-    \item \textbf{두 경로.} optimum-rbln \texttt{.rbln} 아티팩트 \;/\; \texttt{torch.compile(dynamic=False)} + rebel backend.
-    \item \textbf{Prefill 단독 실행}(batch $=1$), \textbf{decode batch 차원만 버킷팅}. seq length는 버킷 안 함 — 고정 \texttt{max\_model\_len} 그래프 + host mask.
-    \item \textbf{KV block $=$ attention partition} (1--4K tok) $\Rightarrow$ sub-block prefix caching 별도 계층; prefix hit 시 matched KV를 새 블록에 \emph{복사}(동기·전 레이어·forward 전).
-    \item \textbf{TP는 그래프에 컴파일}(per-op NCCL 없음). \textbf{overlap scheduler 없음}(async 비활성).
+  \begin{itemize}\setlength\itemsep{5pt}
+    \item \textbf{완전 AOT} — 런타임 컴파일 / eager fallback 없음; 미준비 shape은 실행 불가.
+    \item \textbf{두 경로} — optimum-rbln \texttt{.rbln} 아티팩트 \,/\, \texttt{torch.compile(dynamic=False)} + rebel backend.
+    \item \textbf{Prefill 단독}(batch $=1$); \textbf{decode batch만 버킷팅}; seq len은 고정 \texttt{max\_model\_len} 그래프.
+    \item \textbf{KV block $=$ attention partition} (1--4K tok) $\Rightarrow$ sub-block prefix caching; hit 시 KV \emph{복사}(동기).
+    \item \textbf{TP는 그래프에 컴파일}; \textbf{overlap scheduler 없음}.
   \end{itemize}
-  \vspace{0.4em}
   \begin{alertblock}{한 줄}
-    RBLN은 strict-AOT — 미준비 shape에 대한 런타임 탈출구가 없다. 나머지 모든 설계가 여기서 파생된다.
+    RBLN은 strict-AOT — 미준비 shape에 런타임 탈출구가 없다. 나머지 설계는 여기서 파생.
   \end{alertblock}
 \end{frame}

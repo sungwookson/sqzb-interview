@@ -1,36 +1,38 @@
-% ============================ Q1 ============================
 \begin{frame}{Q1 — Strict AOT: 재사용 vs 재설계}
-  \footnotesize
-  \hd{Framing}
-  Gaudi has a runtime escape hatch (JIT recompile on a shape miss); RBLN does not — an
-  uncompiled shape cannot run. Reference experience: vLLM-on-Gaudi, one step less strict.
-
-  \hd{Carries over — disciplines, not code}
-  \begin{itemize}
-    \item Shape normalization at the scheduler boundary (bucket $\to$ pad $\to$ mask).
-    \item Separate prefill / decode graph families.
-    \item Sampling, penalties, grammar, detokenize kept \emph{off} the model graph.
-    \item Host-side KV / paging / radix bookkeeping — SGLang's \texttt{RadixCache} is already host Python.
-    \item Offline compile + artifact cache + CI precompile; shape telemetry $\to$ offline re-bucketing.
-  \end{itemize}
-
-  \hd{Must be redesigned}
-  \begin{itemize}
-    \item Forward path (eager torch + CUDA graphs / FlashInfer / Triton $\to$ precompiled runtime).
-    \item Mixed prefill+decode batching (vllm-rbln forbids it: prefill exclusive, batch 1).
-    \item RadixAttention's variable extend length; jump-forward / retract / adaptive trees.
-    \item Speculative decoding; per-op NCCL TP; the overlap scheduler.
-  \end{itemize}
+  \hd{Framing} Gaudi has a JIT-recompile escape hatch on a shape miss; RBLN does not.
+  Reference: vLLM-on-Gaudi, one step less strict.
+  \vspace{2pt}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \hd{Carries over — disciplines}
+      \begin{itemize}
+        \item Shape normalization at the scheduler boundary
+        \item Separate prefill / decode graphs
+        \item Sampling / grammar / detok off the model graph
+        \item Host-side KV / radix bookkeeping
+        \item Offline compile $+$ artifact cache $+$ telemetry
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \hd{Must be redesigned}
+      \begin{itemize}
+        \item The forward path itself
+        \item Mixed prefill$+$decode batching
+        \item RadixAttention's variable extend length
+        \item Speculative decoding; per-op NCCL TP
+        \item The overlap scheduler
+      \end{itemize}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 \begin{frame}{Q1 — meta-lesson}
   \begin{alertblock}{Invariant, designed in from commit 1}
     The scheduler emits \emph{only} shapes compiled offline.
   \end{alertblock}
-  \begin{itemize}
+  \begin{itemize}\setlength\itemsep{5pt}
     \item A clamp layer maps any (batch, chunk, block-count) to the nearest warmed bucket.
-    \item A bounded, loudly-metered fallback-compile path — \emph{never} on the serving hot path.
-    \item On Gaudi I could lean on recompile-on-miss during bring-up; it bit back later as
-          mid-serving JIT stalls. RBLN forces the invariant early.
+    \item A bounded, loudly-metered fallback-compile — \emph{never} on the serving hot path.
+    \item On Gaudi I leaned on recompile-on-miss during bring-up; it bit back as mid-serving JIT stalls.
   \end{itemize}
 \end{frame}

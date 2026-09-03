@@ -1,29 +1,22 @@
-% ============================ Q2 ============================
 \begin{frame}{Q2 — 고정 shape 버킷 / warm-up의 한계}
-  \footnotesize
-  \hd{Why fixed shape + warm-up}
-  \begin{itemize}
-    \item NPUs only run efficiently on compiled, fixed-shape graphs.
-    \item A serving-path recompile is unacceptable $\Rightarrow$ every shape to be served is compiled at warm-up.
-  \end{itemize}
+  \hd{Why bucket at all}
+  NPUs only run compiled fixed-shape graphs; a serving-path recompile is unacceptable
+  $\Rightarrow$ every shape is compiled at warm-up.
 
   \hd{Gaudi limits (pre-chunked-prefill, vLLM V0)}
   \begin{itemize}
     \item Prompt bucket $=$ (bs $\times$ seq\_len) $\Rightarrow$ count scales with \texttt{max\_model\_len}
-          (docs: 24 prompt $+$ 48 decode; 100s--1000s for long context).
-    \item No real input distribution $\Rightarrow$ min/step/max is guesswork; too many buckets
-          $\Rightarrow$ long compile $+$ HBM spent on graphs, not KV cache.
-    \item Warm-up is a deploy cost: a \raise.3ex\hbox{\texttildelow}1M-token config OOM'd; when it fit, 24h$+$ to compile.
+          — 24 prompt $+$ 48 decode in the docs; 100s--1000s for long context.
+    \item Warm-up is a deploy cost: a $\sim$1M-token config OOM'd; when it fit, 24h$+$ to compile.
     \item An unbucketed request $\Rightarrow$ synchronous recompile that stalls the \emph{whole} engine.
   \end{itemize}
 
   \hd{Mitigations}
   \begin{itemize}
-    \item Exponential bucketing (crucial for 1M): dense near min, sparse near max — 1000s $\to$ \raise.3ex\hbox{\texttildelow}13.
-    \item Padding-aware bucketing (current default): linear ramp $+$ \texttt{pad\_max} / \texttt{pad\_percent} caps.
-    \item Graph caching: compile once, save to host, reuse across restarts / pods.
+    \item Exponential / padding-aware bucketing (\texttt{pad\_max}, \texttt{pad\_percent}) — 1000s $\to$ $\sim$13.
+    \item Graph caching — compile once, save to host, reuse across restarts / pods.
     \item Chunked prefill (V1): bucket $=$ (bs $\times$ query $\times$ num\_blocks), query capped at chunk size
           $\Rightarrow$ prompt-bucket count \emph{decouples} from \texttt{max\_model\_len}
-          (docs: \raise.3ex\hbox{\texttildelow}36 prompt covering \raise.3ex\hbox{\texttildelow}100$\times$ the context).
+          ($\sim$36 prompt, $\sim$100$\times$ the context).
   \end{itemize}
 \end{frame}

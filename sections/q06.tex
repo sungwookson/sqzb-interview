@@ -1,24 +1,19 @@
-% ============================ Q6 ============================
 \begin{frame}{Q6 — RadixAttention vs PagedAttention}
-  \footnotesize
   \hd{Different layers, not competitors}
   \begin{itemize}
-    \item \textbf{PagedAttention} $=$ a KV-cache \emph{memory allocator} (fixed blocks $+$ block table).
-    \item \textbf{RadixAttention} $=$ a \emph{reuse + eviction policy} (prefix tree $+$ LRU).
-    \item You need both. The real comparison is RadixAttention vs vLLM's hash-based prefix caching.
+    \item \textbf{PagedAttention} $=$ a KV-cache \emph{memory allocator} (blocks $+$ block table).
+    \item \textbf{RadixAttention} $=$ a \emph{reuse $+$ eviction policy} (prefix tree $+$ LRU).
+    \item You need both. Real comparison: RadixAttention vs vLLM's hash-based prefix caching.
   \end{itemize}
-
   \hd{AOT burden — all from ``block $=$ fixed attention partition (1--4K)''}
   \begin{itemize}
     \item Granularity fights the kernel $\Rightarrow$ a separate sub-block caching layer.
-    \item A prefix hit is a \emph{physical KV copy} (synchronous, all layers, before the forward), not a pointer swap.
-    \item Tree bookkeeping (match / split / refcount / evict) is host work on the critical path.
-    \item Variable match length $\Rightarrow$ variable prefill shape $\Rightarrow$ forced back to a fixed chunk.
-    \item Eviction fenced to step boundaries; cross-engine routing needs a bespoke sub-block KV-event stream.
-    \item HiCache (L1/L2/L3): an L2/L3 hit stalls for a promotion; a slow / mispredicted fetch $\to$ recompute (pay lookup \emph{and} compute).
+    \item A prefix hit is a \emph{physical KV copy} (sync, all layers, before the forward).
+    \item Tree bookkeeping is host work on the critical path; eviction fenced to step boundaries.
+    \item Variable match length $\Rightarrow$ variable prefill shape $\Rightarrow$ forced to a fixed chunk.
+    \item HiCache (L1/L2/L3): an L2/L3 hit stalls for a promotion; a slow fetch $\to$ recompute.
   \end{itemize}
-
   \begin{alertblock}{Mitigation}
-    Pin the reuse granularity to a sub-block $=$ the prefill chunk size — exactly what vllm-rbln did.
+    Pin the reuse granularity to a sub-block $=$ the prefill chunk size (what vllm-rbln did).
   \end{alertblock}
 \end{frame}

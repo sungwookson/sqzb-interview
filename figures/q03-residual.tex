@@ -1,19 +1,19 @@
 % S = cached prefix + residual R  ->  bucket is chosen from R
 \begin{tikzpicture}[font=\footnotesize, x=1cm, y=1cm]
-  % --- Row 1: no caching ---
-  \node[anchor=east, brick, font=\footnotesize\bfseries] at (-0.2, 1.35) {No caching};
-  \filldraw[fill=soft, draw=softtxt] (0,1.05) rectangle (8.2,1.65);
-  \node[softtxt] at (4.1,1.35) {prompt length $S$ — compute all of it};
-  \draw[-{Stealth}, softtxt, thick] (8.5,1.35) -- (9.2,1.35);
-  \node[anchor=west, softtxt] at (9.35,1.35) {bucket $=S$ · padding waste};
+  % Row 1: no caching
+  \node[anchor=east, brick, font=\footnotesize\bfseries] at (-0.2,1.35) {No caching};
+  \filldraw[fill=soft, draw=softtxt] (0,1.05) rectangle (7.4,1.65);
+  \node[softtxt] at (3.7,1.35) {prompt length $S$ — compute all of it};
+  \draw[-{Stealth}, softtxt, thick] (7.7,1.35) -- (8.4,1.35);
+  \node[anchor=west, softtxt, font=\footnotesize\bfseries] at (8.55,1.35) {bucket $=S$};
 
-  % --- Row 2: cache hit ---
-  \node[anchor=east, brick, font=\footnotesize\bfseries] at (-0.2, 0.0) {Cache hit};
-  \filldraw[fill=soft, draw=softtxt] (0,-0.3) rectangle (5.8,0.3);
-  \node[softtxt] at (2.9,0.0) {cached prefix · KV reused · not computed};
-  \filldraw[fill=brick, draw=brick] (5.8,-0.3) rectangle (8.2,0.3);
-  \node[white, font=\footnotesize\bfseries] at (7.0,0.0) {$R$};
-  \node[softtxt, font=\scriptsize] at (7.0,-0.62) {varies per request};
-  \draw[-{Stealth}, brick, thick] (8.5,0.0) -- (9.2,0.0);
-  \node[anchor=west, brick, font=\footnotesize\bfseries] at (9.35,0.0) {bucket $=R$ · small graph};
+  % Row 2: cache hit
+  \node[anchor=east, brick, font=\footnotesize\bfseries] at (-0.2,0.0) {Cache hit};
+  \filldraw[fill=soft, draw=softtxt] (0,-0.3) rectangle (5.2,0.3);
+  \node[softtxt] at (2.6,0.0) {cached prefix · KV reused};
+  \filldraw[fill=brick, draw=brick] (5.2,-0.3) rectangle (7.4,0.3);
+  \node[white, font=\footnotesize\bfseries] at (6.3,0.0) {$R$};
+  \node[softtxt, font=\scriptsize] at (6.3,-0.62) {varies per request};
+  \draw[-{Stealth}, brick, thick] (7.7,0.0) -- (8.4,0.0);
+  \node[anchor=west, brick, font=\footnotesize\bfseries] at (8.55,0.0) {bucket $=R$};
 \end{tikzpicture}

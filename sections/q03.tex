@@ -1,29 +1,25 @@
-% ============================ Q3 ============================
 \begin{frame}{Q3 — Prefix caching과 prefill 버킷 설계}
-  \small
   \hd{The effect}
   \begin{itemize}
-    \item Without prefix caching, prefill buckets are sized to the full prompt length.
-    \item With a cache hit, the tokens actually computed
-          $= R = (\text{prompt length}) - (\text{cached prefix})$. $R$ varies per request, usually small.
-    \item Pick the bucket from $R$, not the prompt length — a prompt-sized graph pads away the benefit.
+    \item Without caching, buckets are sized to the full prompt length.
+    \item With a hit, tokens actually computed $= R = (\text{prompt}) - (\text{cached prefix})$;
+          $R$ varies per request, usually small.
+    \item Pick the bucket from $R$, not the prompt — a prompt-sized graph pads away the benefit.
   \end{itemize}
-
   \hd{Approach}
   \begin{itemize}
-    \item Look up the cache $\to$ compute $R$ $\to$ smallest compiled bucket $\ge R$.
-    \item One chunk-sized prefill graph $+$ a few small tail buckets; long residuals repeat the chunk graph.
-    \item Bucket sizes from the real post-cache residual-length distribution, recompiled offline.
-    \item vllm-rbln does this: one prefill graph at the chunk size; prefix reuse at a finer sub-block
-          granularity; matched KV copied into the request's blocks before the forward.
+    \item Look up cache $\to$ compute $R$ $\to$ smallest compiled bucket $\ge R$.
+    \item One chunk-sized prefill graph $+$ a few tail buckets; long $R$ repeats the chunk.
+    \item Bucket sizes from the real post-cache $R$ distribution, recompiled offline.
+    \item vllm-rbln: one prefill graph at chunk size; sub-block reuse; matched KV copied before the forward.
   \end{itemize}
 \end{frame}
 
 \begin{frame}{Q3 — how prefix caching moves the workload}
-  \vspace{1em}
-  \begin{center}\input{figures/q03-residual}\end{center}
-  \vspace{1.5em}
-  \small A short $R$ still attends over the \emph{full} cached context behind it
-  $\;\Rightarrow\;$ the graph needs a small query bucket \textbf{and} a bounded pointer to the
+  \vspace{1.2em}
+  \begin{center}\resizebox{\textwidth}{!}{\input{figures/q03-residual}}\end{center}
+  \vspace{1.6em}
+  \footnotesize A short $R$ still attends over the \emph{full} cached context
+  $\Rightarrow$ the graph needs a small query bucket \textbf{and} a bounded pointer to the
   cached KV (block table $+$ seq-lens), not one large shape.
 \end{frame}
