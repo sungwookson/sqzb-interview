@@ -1,5 +1,9 @@
 # sglang-rbln 설계 리뷰 — SqueezeBits 2nd assessment
 
+
+> **Overleaf: set Compiler to XeLaTeX.**
+> Menu -> Settings -> Compiler -> XeLaTeX. (pdfLaTeX fails on `fontspec`/`kotex`.)
+
 Beamer talk answering the 10 questions. Source is plain LaTeX so it round-trips
 cleanly through git ⇄ Overleaf.
 
