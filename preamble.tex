@@ -1,0 +1,42 @@
+\usetheme{metropolis}
+
+\usepackage{fontspec}
+\usepackage{kotex}                 % Korean (XeLaTeX). Remove if you go English-only.
+\usepackage{amssymb,amsmath}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds}
+
+% ---- palette (matches the brick-red the PPT drafts used) ----
+\definecolor{brick}{HTML}{C03221}
+\definecolor{ink}{HTML}{1A1A1A}
+\definecolor{paper}{HTML}{FFFDFB}
+\definecolor{soft}{HTML}{ECE7E3}
+\definecolor{softtxt}{HTML}{5A5550}
+
+\setbeamercolor{normal text}{fg=ink,bg=paper}
+\setbeamercolor{alerted text}{fg=brick}
+\setbeamercolor{frametitle}{fg=ink,bg=paper}
+\setbeamercolor{progress bar}{fg=brick}
+\setbeamercolor{title separator}{fg=brick}
+\metroset{block=fill,sectionpage=none,numbering=fraction,progressbar=frametitle}
+
+% red rule under every frame title
+\setbeamertemplate{frametitle}{%
+  \nointerlineskip
+  \begin{beamercolorbox}[wd=\paperwidth,sep=0.85ex,leftskip=1.4ex]{frametitle}%
+    \usebeamerfont{frametitle}\strut\insertframetitle\strut\par
+  \end{beamercolorbox}%
+  {\color{brick}\rule{\paperwidth}{1pt}}\par\vspace*{0.4ex}%
+}
+
+\setbeamertemplate{itemize item}{\textcolor{brick}{\textbf{--}}}
+\setbeamertemplate{itemize subitem}{\textcolor{softtxt}{$\cdot$}}
+
+% section header used inside frames (the style used in the PPT drafts)
+\newcommand{\hd}[1]{{\color{brick}\bfseries #1}\par\smallskip}
+% inline residual symbols
+\newcommand{\R}{\ensuremath{R}}
+\newcommand{\Sfull}{\ensuremath{S}}
+
+\setlength{\parskip}{2pt}

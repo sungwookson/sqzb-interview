@@ -1,0 +1,22 @@
+% ============================ Q8 ============================
+\begin{frame}{Q8 — RadixAttention의 RBLN 포팅 경계}
+  \small
+  The radix tree is \emph{entirely} host. The device does fixed-shape matmuls $+$ KV scatter
+  $+$ one host-scheduled block copy.
+  \vspace{0.6em}
+  \begin{center}\input{figures/q08-boundary}\end{center}
+\end{frame}
+
+\begin{frame}{Q8 — porting order}
+  \small
+  \begin{enumerate}\itemsep2pt
+    \item KV pool layout \texttt{[2, num\_blocks, H, 1, block\_size, D]}; \texttt{block\_size} $=$ partition.
+    \item Fixed-shape prefill / decode graph interfaces (one chunk size; batch-size buckets).
+    \item RBLN \texttt{AttentionBackend} — translate SGLang forward metadata into the fixed tensors.
+    \item Compile the covering set $+$ artifact cache (keyed on model / dtype / TP / bucket-hash / compiler).
+    \item Host radix layer — align matched prefixes to sub-block $=$ chunk size.
+    \item KV write / reuse — scatter for new K/V; schedule a copy op for a partial hit.
+    \item Absolute-position RoPE; scheduler guard (only compiled shapes); step-fenced eviction.
+    \item TP (collectives in-graph); correctness $+$ boundary validation; shape telemetry.
+  \end{enumerate}
+\end{frame}

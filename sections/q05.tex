@@ -1,0 +1,32 @@
+% ============================ Q5 ============================
+\begin{frame}{Q5 — 컴파일 스펙트럼별 강제사항}
+  \footnotesize
+  \hd{Reframe}
+  Not about ``compilation'' — about what the stack may assume about shapes, and what a miss costs.
+
+  \begin{itemize}
+    \item \textbf{Eager} — total shape freedom; host is the bottleneck (launch per op).
+          Design: C++ hot path, overlap, minimal per-step Python.
+    \item \textbf{JIT + cache} — first hit compiles; soft bucketing (a miss is slow, not fatal);
+          versioned cache; SLO guard. Tolerates new shapes.
+    \item \textbf{Graph capture / replay} — fixed shapes \emph{and} fixed addresses; pre-alloc KV/IO,
+          copy-in/out; no data-dependent control flow inside the region.
+    \item \textbf{Strict AOT} — shape set frozen at build; compiler version $=$ deploy contract;
+          uncompiled shape cannot run $\Rightarrow$ scheduler must guarantee legal shapes;
+          every dynamic path $=$ fixed-shape compute $+$ host post-processing.
+  \end{itemize}
+
+  \hd{My environments}
+  \begin{itemize}
+    \item Gaudi $=$ capture/replay $+$ JIT-recompile fallback. Precompile the covering set — a miss stalls the whole engine.
+    \item Battlemage $=$ eager, \emph{forced} by oneCCL/SYCL not composing (no multi-card). Single-card, host-path optimized.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Q5 — the spectrum}
+  \vspace{1.5em}
+  \begin{center}\input{figures/q05-spectrum}\end{center}
+  \vspace{1em}
+  \small For sglang-rbln: RBLN sits at strict-AOT with no fallback $\Rightarrow$ ``keep shapes legal''
+  moves entirely into the scheduler $+$ build pipeline. Gaudi's discipline, safety net removed.
+\end{frame}

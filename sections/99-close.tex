@@ -1,0 +1,25 @@
+% ============================ CLOSE ============================
+\begin{frame}{합류 시 첫 마일스톤 · 리스크}
+  \small
+  \hd{Milestones}
+  \begin{itemize}
+    \item \textbf{M0} — 1 model · TP1 · greedy · prefix cache off: compile $\to$ artifact $\to$ load $\to$ fixed-shape forward, end to end.
+    \item \textbf{M1} — RBLN \texttt{AttentionBackend} $+$ fixed-chunk prefill $+$ decode-batch bucketing.
+    \item \textbf{M2} — host radix $+$ sub-block prefix caching $+$ KV copy path.
+    \item \textbf{M3} — overlap scheduler (greenfield) — the TPOT lever.
+  \end{itemize}
+  \hd{Risks / guards}
+  \begin{itemize}
+    \item Compiler rejects varlen attention · warm-up time (long context) · KV-copy sync cost · spec-decode scope.
+    \item Scheduler shape-clamp $+$ bounded, loud fallback — never on the serving hot path.
+    \item Shape telemetry $\to$ offline recompile.
+  \end{itemize}
+  \begin{alertblock}{One sentence}
+    RBLN already keeps the Python scheduler thin and pushes variability into the compiled binary.
+    sglang-rbln starts from that posture and adds the overlap scheduler.
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}[standout]
+  감사합니다 \\[0.4em] Q \& A
+\end{frame}

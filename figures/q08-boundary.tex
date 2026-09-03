@@ -1,0 +1,24 @@
+% host / device boundary for RadixAttention on RBLN
+\begin{tikzpicture}[font=\scriptsize, node distance=4mm]
+  \tikzset{
+    hostbox/.style={draw=softtxt, fill=soft, rounded corners=2pt, text width=5.4cm, inner sep=5pt, align=left},
+    devbox/.style ={draw=brick,   fill=paper, rounded corners=2pt, text width=5.4cm, inner sep=5pt, align=left},
+  }
+  \node[hostbox] (h) {
+    \textbf{\textcolor{softtxt}{HOST}} — all Python\\[2pt]
+    radix tree: match / split / refcount / LRU / free\\
+    block-table build (fixed \texttt{int16}, $-1$ pad)\\
+    batch compose $+$ \texttt{dummy\_block}; chunk the extend\\
+    \texttt{position\_ids}; schedule \texttt{KVCacheCopyOp(src,dst,n)}
+  };
+  \node[devbox, right=2.2cm of h] (d) {
+    \textbf{\textcolor{brick}{DEVICE}} — the compiled graph\\[2pt]
+    AOT attention: QKV · RoPE · flash-attn over KV partitions\\
+    KV \emph{scatter} (new K/V into blocks)\\
+    KV block \emph{copy}: \texttt{kv[:,dst,\dots] = kv[:,src,\dots]}\\
+    \hphantom{x}\;— before the forward · synchronous · all layers
+  };
+  \draw[-{Stealth}, brick, thick] (h.east) -- node[above, midway, softtxt]{$(src,dst,n)$} (d.west);
+  \node[below=3mm of $(h.south)!0.5!(d.south)$, softtxt, text width=11.5cm, align=center]
+    {Grey zone $=$ the copy: host computes $(src,dst,n)$, device moves the bytes.};
+\end{tikzpicture}

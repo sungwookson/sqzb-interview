@@ -1,0 +1,18 @@
+% compile spectrum: constraints tighten left -> right
+\begin{tikzpicture}[font=\scriptsize, x=1cm, y=1cm]
+  \draw[-{Stealth}, softtxt, very thick] (0,0) -- (13.2,0);
+  \foreach \x/\name in {0.6/Eager, 4.6/{JIT + cache}, 8.2/{Graph capture / replay}, 11.8/{Strict AOT}}{
+    \fill[brick] (\x,0) circle (2.2pt);
+    \node[anchor=south, brick, font=\scriptsize\bfseries] at (\x,0.18) {\name};
+  }
+  \node[anchor=north, softtxt, text width=3.2cm, align=center] at (0.6,-0.25)
+    {shape 완전 자유\\host가 병목};
+  \node[anchor=north, softtxt, text width=3.4cm, align=center] at (4.6,-0.25)
+    {첫 히트 컴파일\\soft 버킷팅 · 미스=느림};
+  \node[anchor=north, softtxt, text width=3.6cm, align=center] at (8.2,-0.25)
+    {고정 shape \emph{및} 고정 주소\\region 내 제어흐름 금지};
+  \node[anchor=north, softtxt, text width=3.4cm, align=center] at (11.8,-0.25)
+    {build에 shape 확정\\미스 = 실행 불가};
+  \node[anchor=west, brick, font=\scriptsize] at (0,-1.9)
+    {Gaudi $\approx$ capture/replay $+$ JIT fallback \quad\textbar\quad Battlemage $\approx$ eager (toolchain-forced) \quad\textbar\quad RBLN $=$ strict AOT};
+\end{tikzpicture}

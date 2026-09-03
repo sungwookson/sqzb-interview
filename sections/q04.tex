@@ -1,0 +1,26 @@
+% ============================ Q4 ============================
+\begin{frame}{Q4 — 포팅 계획이 틀어진 사례와 교훈}
+  \footnotesize
+  \hd{Wrong assumption}
+  Ported Qwen2.5/3-VL to Gaudi. LLM already ran; ``the vision encoder is just a transformer''
+  $\Rightarrow$ scoped it as wrap-the-whole-encoder-in-one-graph.
+
+  \hd{What broke}
+  Vision-tower sequence length $=$ total patch count $= \sum_{\text{images}} t\cdot h\cdot w$
+  — varies with image count, resolution, aspect ratio $\Rightarrow$ \texttt{cu\_seqlens},
+  block-diagonal mask shape, window partitioning all data-dependent $\Rightarrow$ one static
+  graph impossible. Team pushed on a pure graph for weeks.
+
+  \hd{Resolved in phases}
+  \begin{itemize}
+    \item per-image loop $\to$ patch-count bucketing (pad hidden states / RoPE / \texttt{cu\_seqlens}, strip after)
+    \item split the tower: \textbf{pre\_attn (dynamic) / static core (compiled) / post\_attn (dynamic)}
+    \item operator-declared warm-up (resolution $\times$ item-count, incl. ranges for the cache interaction)
+  \end{itemize}
+  Never fully static — mask still CPU-fallbacks for long sequences; long-seq attention still tiles.
+
+  \hd{Lesson $\to$ sglang-rbln}
+  Don't eliminate dynamism, \emph{relocate} it: largest possible static core, thin dynamic shell on the host.
+  $\Rightarrow$ encoder+projector as a separate compiled unit; pre/static/post as the default structure;
+  bucket by patch count; warm-up manifest; miss-guard with a bounded loud fallback.
+\end{frame}
